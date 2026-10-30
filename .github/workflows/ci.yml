@@ -82,6 +82,8 @@ jobs:
             ${{ steps.names.outputs.out }}/Manufacturers/JLCPCB/*.csv
             ${{ steps.names.outputs.out }}/Manufacturers/NextPCB/*.zip
             ${{ steps.names.outputs.out }}/Manufacturers/NextPCB/*.csv
+            ${{ steps.names.outputs.out }}/Manufacturers/RaptorTech/*.zip
+            ${{ steps.names.outputs.out }}/Manufacturers/RaptorTech/*.csv
             ${{ steps.names.outputs.out }}/Schematic/*.pdf
             ${{ steps.names.outputs.out }}/3D_Model/*.step
             ${{ steps.names.outputs.out }}/Assembly/*.html
