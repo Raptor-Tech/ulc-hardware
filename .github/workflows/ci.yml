@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: qm35-ranger
+
+jobs:
+  build:
+    # Skip the extra run triggered by Commitizen's own "bump:" commit
+    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Generated directory
+        run: mkdir -p Generated
+
+      - name: Run KiBot
+        uses: INTI-CMNB/KiBot@v2_k10
+        with:
+          config: kibot.yaml
+          dir: ./Generated
+
+      - name: List generated outputs
+        run: ls -R ./Generated
+
+      - name: Bump version with Commitizen
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        id: cz
+        uses: commitizen-tools/commitizen-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          changelog_increment_filename: _changelog_body.md
+
+      - name: Set output name
+        id: names
+        run: |
+          if [ -n "${{ steps.cz.outputs.version }}" ]; then
+            echo "out=${{ env.PROJECT_NAME }}-v${{ steps.cz.outputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "out=${{ env.PROJECT_NAME }}-run-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rename output folder
+        run: sudo mv ./Generated "./${{ steps.names.outputs.out }}"
+
+      # Artifact on every run (PRs and branches too). GitHub zips it for you.
+      - name: Upload outputs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.names.outputs.out }}
+          path: ./${{ steps.names.outputs.out }}
+          if-no-files-found: error
+
+      # Everything below only runs when Commitizen bumped the version
+      - name: Create release tarball
+        if: steps.cz.outputs.version != ''
+        run: tar -czf "${{ steps.names.outputs.out }}_hw-release.tar.gz" "${{ steps.names.outputs.out }}"
+
+      - name: Create release
+        if: steps.cz.outputs.version != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.cz.outputs.version }}
+          name: Release v${{ steps.cz.outputs.version }}
+          body_path: _changelog_body.md
+          fail_on_unmatched_files: false
+          files: |
+            ${{ steps.names.outputs.out }}_hw-release.tar.gz
+            ${{ steps.names.outputs.out }}/Manufacturers/JLCPCB/*.zip
+            ${{ steps.names.outputs.out }}/Manufacturers/JLCPCB/*.csv
+            ${{ steps.names.outputs.out }}/Manufacturers/NextPCB/*.zip
+            ${{ steps.names.outputs.out }}/Manufacturers/NextPCB/*.csv
+            ${{ steps.names.outputs.out }}/Schematic/*.pdf
+            ${{ steps.names.outputs.out }}/3D_Model/*.step
+            ${{ steps.names.outputs.out }}/Assembly/*.html

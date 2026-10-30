@@ -1,0 +1,197 @@
+kibot:
+  version: 1
+
+global:
+  filters:
+  - number: 1007
+  - number: 1015
+  - number: 58
+
+
+preflight:
+  run_erc: false
+  run_drc: false
+  drc:
+    dont_stop: true
+    format: RPT
+  erc:
+    dont_stop: true
+    format: RPT
+
+outputs:
+  # --- STEP Model ---
+  - name: step_model
+    comment: 3D model in STEP format
+    type: step
+    dir: 3D_Model
+
+  # --- Schematic PDF ---
+  - name: schematic_pdf
+    comment: Schematic in PDF format
+    type: pdf_sch_print
+    dir: Schematic
+
+  # --- Gerbers ---
+  - name: gerbers
+    comment: Gerber files (layer count auto-detected from PCB stackup)
+    type: gerber
+    options:
+      layers: all
+    dir: Gerbers
+
+  # --- Drill Files ---
+  - name: drill_files
+    comment: Drill files in Excellon format
+    type: excellon
+    dir: Gerbers
+    options:
+      pth_and_npth_single_file: false
+      map: gerber
+
+  # --- Gerbers + Drill ZIP ---
+  - name: gerbers_zip
+    comment: Zipped Gerbers and drill files for fabrication
+    type: compress
+    dir: Manufacturers/JLCPCB
+    options:
+      format: ZIP
+      files:
+        - from_output: gerbers
+          dest: /
+        - from_output: drill_files
+          dest: /
+
+  # --- BOM ---
+  - name: bom_csv
+    comment: Bill of Materials in CSV format
+    type: bom
+    dir: BoM
+    options:
+      format: CSV
+      count_smd_tht: true
+      exclude_filter: _kibom_dnf_Config
+      dnf_filter: _kibom_dnf_Config
+
+  # --- JLC BoM ---
+  - name: jlcpcb_bom
+    comment: JLC PCBA compatible BoM
+    type: bom
+    dir: Manufacturers/JLCPCB
+    options:
+      format: CSV
+      count_smd_tht: true
+      exclude_filter: _kibom_dnf_Config
+      dnf_filter: _kibom_dnf_Config
+      columns:
+        - field: Value
+          name: Comment
+        - field: References
+          name: Designator
+        - field: Footprint
+          name: Footprint
+        - field: JLC_PN
+          name: 'LCSC Part #'
+      group_fields: ['Value', 'Footprint', 'LCSC']
+      csv:
+        hide_pcb_info: true
+        hide_stats_info: true
+
+  # --- NextPCB BoM ---
+  - name: nextpcb_bom
+    comment: NEXT PCB compatible BoM
+    type: bom
+    dir: Manufacturers/NextPCB
+    options:
+      format: CSV
+      count_smd_tht: true
+      exclude_filter: _kibom_dnf_Config
+      dnf_filter: _kibom_dnf_Config
+      columns:
+        - name: Designator
+          field: Reference
+        - name: Quantity
+          field: Quantity Per PCB
+        - name: Manufacturer Part Number
+          field: MPN
+        - field: Footprint
+          name: Footprint
+      group_fields: ['Value', 'Footprint', 'LCSC']
+      csv:
+        hide_pcb_info: true
+        hide_stats_info: true
+
+  # --- JLC CPL ---
+  - name: jlcpcb_cpl
+    comment: JLC PCBA compatible CPL (SMD + THT)
+    type: position
+    dir: Manufacturers/JLCPCB
+    options:
+      format: CSV
+      only_smd: false
+      separate_files_for_front_and_back: false
+      dnf_filter: _kibom_dnf_Config
+      pre_transform:
+        - _kicost_rename
+        - _rot_footprint
+      columns:
+        - id: Ref
+          name: Designator
+        - id: Val
+          name: Val
+        - id: Package
+          name: Package
+        - id: PosX
+          name: Mid X
+        - id: PosY
+          name: Mid Y
+        - id: Rot
+          name: Rotation
+        - id: Side
+          name: Layer
+
+  # --- NextPCB CPL ---
+  - name: nextpcb_cpl
+    comment: NextPCB PCBA compatible CPL (SMD + THT)
+    type: position
+    dir: Manufacturers/NextPCB
+    options:
+      format: CSV
+      only_smd: false
+      separate_files_for_front_and_back: false
+      dnf_filter: _kibom_dnf_Config
+      pre_transform:
+        - _kicost_rename
+        - _rot_footprint
+      columns:
+        - id: Ref
+          name: Designator
+        - id: Val
+          name: Val
+        - id: Package
+          name: Package
+        - id: PosX
+          name: Mid X
+        - id: PosY
+          name: Mid Y
+        - id: Rot
+          name: Rotation
+        - id: Side
+          name: Layer
+
+  - name: gerbers_nextpcb_zip
+    comment: Zipped Gerbers and drill files for fabrication for NextPCB
+    type: compress
+    dir: Manufacturers/NextPCB
+    options:
+      format: ZIP
+      files:
+        - from_output: gerbers
+          dest: /
+        - from_output: drill_files
+          dest: /
+
+  # --- Interactive BOM ---
+  - name: interactive_bom
+    comment: Interactive HTML BoM
+    type: ibom
+    dir: Assembly
