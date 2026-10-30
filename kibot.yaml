@@ -178,17 +178,20 @@ outputs:
         - id: Side
           name: Layer
 
+  # --- RaptorTech CPL ---
+  # KiBot can't emit the empty Ref/Pad columns or T/B layer codes, so this writes
+  # an intermediate file; raptortech_pnp.py turns it into <board>_PnP.csv.
   - name: rt_cpl
-    comment: RaptorTech CPL File
+    comment: RaptorTech CPL (raw, post-processed by raptortech_pnp.py)
     type: position
     dir: Manufacturers/RaptorTech
     options:
       format: CSV
-      variant: cpl
       units: millimeters
-      right_digits: 3
-      separate_files_for_front_and_back: false
       only_smd: false
+      separate_files_for_front_and_back: false
+      output: '%f_PnP_raw.%x'
+      dnf_filter: _kibom_dnf_Config
       columns:
         - id: Ref
           name: Designator
