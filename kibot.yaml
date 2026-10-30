@@ -178,6 +178,33 @@ outputs:
         - id: Side
           name: Layer
 
+  - name: rt_cpl
+    comment: RaptorTech CPL File
+    type: position
+    dir: Manufacturers/RaptorTech
+    options:
+      format: CSV
+      variant: cpl
+      units: millimeters
+      right_digits: 3
+      separate_files_for_front_and_back: false
+      only_smd: false
+      columns:
+        - id: Ref
+          name: Designator
+        - id: Package
+          name: Footprint
+        - id: PosX
+          name: Mid X
+        - id: PosY
+          name: Mid Y
+        - id: Side
+          name: Layer
+        - id: Rot
+          name: Rotation
+        - id: Val
+          name: Comment
+
   - name: gerbers_nextpcb_zip
     comment: Zipped Gerbers and drill files for fabrication for NextPCB
     type: compress
